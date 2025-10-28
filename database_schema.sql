@@ -1,10 +1,63 @@
 --==============================================================================
 -- SCRIPT DE BASE DE DATOS PARA EL TABLERO DE SEGUIMIENTO DE METAS
--- Versión: 2.0
--- Descripción: Script optimizado con integridad referencial a tablas existentes
--- (SYS_FUNCIONARIO, SYS_UNIDAD_ADMINISTRATIVA), uso de IDENTITY columns y
--- restricciones CHECK para garantizar la calidad de los datos.
+-- Versión: 2.1
+-- Descripción: Script re-ejecutable. Elimina objetos existentes antes de
+-- crearlos para evitar errores ORA-00955. También limpia datos
+-- de ejemplo antes de insertarlos para prevenir errores ORA-00001.
 --==============================================================================
+
+--==============================================================================
+-- 0. ELIMINACIÓN DE OBJETOS EXISTENTES (para re-ejecución)
+--==============================================================================
+BEGIN
+   EXECUTE IMMEDIATE 'DROP VIEW V_METAS_DETALLE';
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE != -942 THEN
+         RAISE;
+      END IF;
+END;
+/
+
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE historial_avances';
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE != -955 AND SQLCODE != -2289 THEN
+         RAISE;
+      END IF;
+END;
+/
+
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE hitos_metas';
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE != -955 AND SQLCODE != -2289 THEN
+         RAISE;
+      END IF;
+END;
+/
+
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE metas';
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE != -955 AND SQLCODE != -2289 THEN
+         RAISE;
+      END IF;
+END;
+/
+
+BEGIN
+   EXECUTE IMMEDIATE 'DROP TABLE categorias_metas';
+EXCEPTION
+   WHEN OTHERS THEN
+      IF SQLCODE != -955 AND SQLCODE != -2289 THEN
+         RAISE;
+      END IF;
+END;
+/
 
 --==============================================================================
 -- 1. TABLAS
@@ -204,6 +257,9 @@ LEFT JOIN
 --==============================================================================
 -- INSERTS INICIALES (Datos de ejemplo)
 --==============================================================================
+-- Se limpia la tabla antes de insertar para evitar errores de duplicados
+DELETE FROM categorias_metas;
+
 INSERT INTO categorias_metas (nombre, color, icono) VALUES ('Estratégica', '#007bff', 'fa-chess-king');
 INSERT INTO categorias_metas (nombre, color, icono) VALUES ('Operativa', '#28a745', 'fa-cogs');
 INSERT INTO categorias_metas (nombre, color, icono) VALUES ('Financiera', '#ffc107', 'fa-dollar-sign');
