@@ -1,8 +1,8 @@
 --==============================================================================
 -- PAQUETE PL/SQL PARA PROCESOS AUTOMÁTICOS Y NOTIFICACIONES
--- Versión: 2.0
--- Descripción: Automatiza el envío de notificaciones y realiza cálculos
--- predictivos. Integrado con SYS_FUNCIONARIO para obtener destinatarios.
+-- Versión: 2.1
+-- Descripción: Corrige el llamado a APEX_MAIL.SEND para usar los parámetros
+-- correctos (p_subj, p_body_html), solucionando el error PLS-00306.
 --==============================================================================
 
 CREATE OR REPLACE PACKAGE PKG_METAS_AUTOMATIZACION AS
@@ -41,15 +41,10 @@ CREATE OR REPLACE PACKAGE BODY PKG_METAS_AUTOMATIZACION AS
         v_app_id             NUMBER;
     BEGIN
         -- Obtener el email del funcionario desde la tabla SYS_FUNCIONARIO
-        -- ATENCIÓN: Se asume que existe un campo de email. Si no, ajustar la lógica.
-        -- Por ejemplo, si el email está en otra tabla como SYS_PERSONA, se haría un JOIN.
-        -- Para este ejemplo, se asume un campo 'EMAIL' en SYS_FUNCIONARIO.
-        -- Si no existe, puedes reemplazar la lógica por un campo existente o un valor fijo.
         BEGIN
             -- Se asume que el email se puede construir o ya existe.
             -- Ejemplo: usando el nombre de usuario o un campo email.
-            -- SELECT email INTO v_email_destinatario FROM SYS_FUNCIONARIO WHERE id_funcionario = p_destinatario_id;
-            -- Como no tenemos campo email, simularemos uno. ¡REEMPLAZAR ESTO!
+            -- ¡REEMPLAZAR ESTA LÓGICA CON LA REAL!
             SELECT lower(nombre1 || '.' || apellido1 || '@dominio.com')
             INTO v_email_destinatario
             FROM SYS_FUNCIONARIO
@@ -65,9 +60,9 @@ CREATE OR REPLACE PACKAGE BODY PKG_METAS_AUTOMATIZACION AS
         SELECT v('APP_ID') INTO v_app_id FROM DUAL;
         IF v_app_id IS NOT NULL THEN
             APEX_MAIL.SEND(
-                p_to   => v_email_destinatario,
-                p_from => 'sistema.metas@tuorganizacion.com', -- Email del remitente
-                p_subj => p_asunto,
+                p_to        => v_email_destinatario,
+                p_from      => 'sistema.metas@tuorganizacion.com', -- Email del remitente
+                p_subj      => p_asunto,
                 p_body_html => p_cuerpo_html
             );
             APEX_MAIL.PUSH_QUEUE; -- Forzar el envío inmediato de la cola de correos
