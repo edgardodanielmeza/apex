@@ -1,12 +1,26 @@
--- SCRIPT DE EXPORTACIÓN DE PÁGINA DE APEX
+-- SCRIPT DE EXPORTACIÓN DE PÁGINA DE APEX (CORREGIDO)
 -- PROYECTO: Seguimiento de Metas POA Institucional
 -- PÁGINA: 2 - Formulario de Carga de Metas
--- DESCRIPCIÓN: Al ejecutar este script en el Taller de SQL, se creará
---              la página 2 con todos sus componentes (región, elementos,
---              botones y procesos) ya configurados.
+-- VERSIÓN: 2.0
+-- DESCRIPCIÓN: Script corregido que incluye el contexto de la aplicación
+--              para evitar el error ORA-20001 durante la importación.
 
 set define off
+
 --
+prompt --application/set_environment
+--
+begin
+    -- ==========================================================================
+    -- == CORRECCIÓN: Establecer el contexto de seguridad para la aplicación 101 ==
+    -- ==========================================================================
+    wwv_flow_api.set_security_group_id(
+        p_security_group_id => wwv_flow_application_install.get_workspace_id
+    );
+    wwv_flow_api.g_flow_id := 101;
+end;
+/
+
 prompt --application/pages/page_00002
 --
 begin
@@ -15,7 +29,7 @@ begin
 --
 wwv_flow_api.create_page(
   p_id=>2,
-  p_user_interface_id=>wwv_flow_api.id(123456789), -- Reemplaza con el ID de tu UI si lo conoces, si no, APEX lo ajustará
+  p_user_interface_id=>wwv_flow_api.id(123456789), -- APEX ajustará este ID si no coincide
   p_name=>'Formulario de Carga de Metas',
   p_alias=>'FORMULARIO-DE-CARGA-DE-METAS',
   p_page_mode=>'MODAL',
@@ -23,7 +37,7 @@ wwv_flow_api.create_page(
   p_autocomplete_on_off=>'OFF',
   p_page_template_options=>'#DEFAULT#:ui-dialog--stretch:t-Dialog--noPadding',
   p_last_updated_by=>'JULES_AI',
-  p_last_upd_yyyymmddhh24miss=>'20231029110000'
+  p_last_upd_yyyymmddhh24miss=>'20231030061500'
 );
 
 -- == REGIÓN PRINCIPAL ==
@@ -31,7 +45,7 @@ wwv_flow_api.create_page_plug(
   p_id=>wwv_flow_api.id(1001),
   p_plug_name=>'Nueva Meta del POA',
   p_region_template_options=>'#DEFAULT#',
-  p_plug_template=>wwv_flow_api.id(987654321), -- Reemplaza con el ID de tu template de región, si no, APEX lo ajustará
+  p_plug_template=>wwv_flow_api.id(987654321), -- APEX ajustará este ID
   p_plug_display_sequence=>10,
   p_plug_query_options=>'DERIVED_REPORT_COLUMNS'
 );
@@ -48,7 +62,7 @@ wwv_flow_api.create_page_item(
   p_display_as=>'NATIVE_TEXT_FIELD',
   p_cSize=>60,
   p_cMaxlength=>300,
-  p_field_template=>wwv_flow_api.id(1122334455), -- Reemplaza con tu template, APEX lo ajustará
+  p_field_template=>wwv_flow_api.id(1122334455), -- APEX ajustará este ID
   p_is_required=>true
 );
 
@@ -125,11 +139,7 @@ wwv_flow_api.create_page_item(
   p_field_template=>wwv_flow_api.id(1122334455)
 );
 
--- ... (Otros campos como LINEA_BASE, UNIDAD_MEDIDA, RANGO_TOLERANCIA pueden añadirse de la misma forma) ...
-
 -- == BOTONES ==
-
--- Botón CANCELAR
 wwv_flow_api.create_page_button(
   p_id=>wwv_flow_api.id(3001),
   p_button_sequence=>10,
@@ -137,7 +147,7 @@ wwv_flow_api.create_page_button(
   p_button_name=>'CANCELAR',
   p_button_action=>'DEFINED_BY_DA',
   p_button_template_options=>'#DEFAULT#',
-  p_button_template_id=>wwv_flow_api.id(5566778899), -- Reemplaza, APEX lo ajustará
+  p_button_template_id=>wwv_flow_api.id(5566778899),
   p_button_image_alt=>'Cancelar',
   p_button_position=>'CLOSE'
 );
@@ -158,9 +168,6 @@ wwv_flow_api.create_page_da_action(
     p_execute_on_page_init=>'N',
     p_action=>'NATIVE_DIALOG_CANCEL'
 );
-
-
--- Botón CREAR
 wwv_flow_api.create_page_button(
   p_id=>wwv_flow_api.id(3004),
   p_button_sequence=>20,
@@ -174,10 +181,7 @@ wwv_flow_api.create_page_button(
   p_button_position=>'CREATE'
 );
 
-
--- == PROCESOS (LOGICA DE GUARDADO) ==
-
--- Proceso que llama al paquete PL/SQL para guardar la meta
+-- == PROCESOS ==
 wwv_flow_api.create_page_process(
   p_id=>wwv_flow_api.id(4001),
   p_process_sequence=>10,
@@ -189,11 +193,11 @@ wwv_flow_api.create_page_process(
     '    PKG_POA_CARGA.crear_meta(',
     '        p_nombre_indicador      => :P2_NOMBRE_INDICADOR,',
     '        p_formula               => :P2_FORMULA,',
-    '        p_linea_base            => :P2_LINEA_BASE,',
+    '        p_linea_base            => null,', -- Añadir ítem P2_LINEA_BASE si es necesario
     '        p_meta_valor            => :P2_META_VALOR,',
-    '        p_unidad_medida         => :P2_UNIDAD_MEDIDA,',
+    '        p_unidad_medida         => null,', -- Añadir ítem P2_UNIDAD_MEDIDA si es necesario
     '        p_fecha_meta            => :P2_FECHA_META,',
-    '        p_rango_tolerancia      => :P2_RANGO_TOLERANCIA,',
+    '        p_rango_tolerancia      => null,', -- Añadir ítem P2_RANGO_TOLERANCIA si es necesario
     '        p_periodicidad          => :P2_PERIODICIDAD,',
     '        p_id_unidad_responsable => :P2_ID_UNIDAD_RESPONSABLE,',
     '        p_usuario_creador       => :APP_USER',
@@ -203,8 +207,6 @@ wwv_flow_api.create_page_process(
   p_process_when_button_id=>wwv_flow_api.id(3004),
   p_process_success_message=>'Meta creada con éxito.'
 );
-
--- Proceso para cerrar la ventana modal después de guardar
 wwv_flow_api.create_page_process(
   p_id=>wwv_flow_api.id(4002),
   p_process_sequence=>20,
@@ -214,13 +216,10 @@ wwv_flow_api.create_page_process(
   p_process_when_button_id=>wwv_flow_api.id(3004)
 );
 
---
 end;
 /
 set define on
---
 prompt --application/end_environment
---
 commit;
 --
 -- end of script
